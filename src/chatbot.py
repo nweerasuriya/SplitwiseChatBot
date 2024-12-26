@@ -9,7 +9,8 @@ __date__ = "2024-12-26"
 __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
-
+# %% --------------------------------------------------------------------------
+# Import Modules
 import json
 
 from langchain.chains.query_constructor.base import AttributeInfo
@@ -20,11 +21,10 @@ from langchain_anthropic import ChatAnthropic
 from langchain_chroma import Chroma
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-# %% --------------------------------------------------------------------------
-# Import Modules
 from src.utilities import get_splitwise_data
 
 with open("config.json") as f:
@@ -46,6 +46,8 @@ class SplitwiseRetriever:
                 name="category", description="Category of the expense", type="string"
             ),
         ]
+        self.memory = MemorySaver()
+        self.graph = None
 
     def get_retriever(self):
         """Create and return a configured retriever"""
@@ -57,10 +59,30 @@ class SplitwiseRetriever:
             search_kwargs={"k": len(self.documents)},
         )
 
+    def generate_graph(self):
+        """
+        Generate the graph for the chatbot
+        """
+        graph_builder = StateGraph(MessagesState)
+        graph_builder.add_node(query_or_respond)
+        graph_builder.add_node(tools)
+        graph_builder.add_node(generate)
+        graph_builder.set_entry_point("query_or_respond")
+        graph_builder.add_conditional_edges(
+            "query_or_respond",
+            tools_condition,
+            {END: END, "tools": "tools"},
+        )
+        graph_builder.add_edge("tools", "generate")
+        graph_builder.add_edge("generate", END)
+        self.graph = graph_builder.compile(checkpointer=self.memory)
+        return self.graph
 
-def chatbot(input_message: str, graph: StateGraph):
-    for step in graph.stream(
+
+def chatbot(input_message: str):
+    for step in splitwise_retriever.graph.stream(
         {"messages": [{"role": "user", "content": input_message}]},
+        config,
         stream_mode="values",
     ):
         step["messages"][-1].pretty_print()
@@ -105,7 +127,7 @@ def query_or_respond(state: MessagesState):
     """
     Generate tool call for retrieval or respond
     """
-    llm_with_tools = llm.bind_tools([retrieve_relevant_docs])
+    llm_with_tools = splitwise_retriever.llm.bind_tools([retrieve_relevant_docs])
     response = llm_with_tools.invoke(state["messages"])
     # MessagesState appends messages to state instead of overwriting
     return {"messages": [response]}
@@ -141,37 +163,18 @@ def generate(state: MessagesState):
     prompt = [SystemMessage(system_prompt)] + conversation_messages
 
     # Run
-    response = llm.invoke(prompt)
+    response = splitwise_retriever.llm.invoke(prompt)
     return {"messages": [response]}
 
 
-# %%
-documents, vector_store = data_processing()
-llm = ChatAnthropic(
-    model=config["model"]["name"],
-    temperature=config["model"]["temperature"],
-    max_tokens=config["model"]["max_tokens"],
-)
-splitwise_retriever = SplitwiseRetriever(documents, vector_store, llm)
-
-# %%
-graph_builder = StateGraph(MessagesState)
-
-graph_builder.add_node(query_or_respond)
-graph_builder.add_node(tools)
-graph_builder.add_node(generate)
-
-graph_builder.set_entry_point("query_or_respond")
-graph_builder.add_conditional_edges(
-    "query_or_respond",
-    tools_condition,
-    {END: END, "tools": "tools"},
-)
-graph_builder.add_edge("tools", "generate")
-graph_builder.add_edge("generate", END)
-
-graph = graph_builder.compile()
-
-input_message = "What was Ned's Dining out owed share in October?"
-chatbot(input_message, graph)
-# %%
+def set_up_chatbot_workflow():
+    documents, vector_store = data_processing()
+    llm = ChatAnthropic(
+        model=config["model"]["name"],
+        temperature=config["model"]["temperature"],
+        max_tokens=config["model"]["max_tokens"],
+    )
+    # create global retriever
+    global splitwise_retriever
+    splitwise_retriever = SplitwiseRetriever(documents, vector_store, llm)
+    splitwise_retriever.generate_graph()

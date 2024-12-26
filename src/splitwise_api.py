@@ -119,15 +119,12 @@ def clean_data(input_df: pd.DataFrame, keep_columns: list = None) -> tuple:
     # Get name from category column
     df["category"] = df["category"].apply(lambda x: x["name"])
     df["users"] = df["users"].apply(get_user_info)
-    # convert to date
-    # df["date"] = pd.to_datetime(df["date"]).dt.date
-
-    # remove columns with description "Settle all balances"
     df = df[df["description"] != "Settle all balances"]
-    # add month name
+    # Split date into day, month, year
     df["day"] = pd.to_datetime(df["date"]).dt.day
     df["month"] = pd.to_datetime(df["date"]).dt.month_name()
     df["year"] = pd.to_datetime(df["date"]).dt.year
+    # Combine description, cost and users into content
     df["content"] = df.apply(
         lambda row: f"Description: {row['description']} || Total cost of item: {row['cost']} {row['currency_code']} || Users: {row['users']}",
         axis=1,
