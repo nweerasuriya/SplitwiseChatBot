@@ -10,6 +10,7 @@ __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
 import os
+
 import pandas as pd
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
@@ -17,7 +18,7 @@ from requests_oauthlib import OAuth2Session
 
 class SplitwiseAPI:
     """
-    Class to retrieve data from the Splitwise API    
+    Class to retrieve data from the Splitwise API
     """
 
     # OAuth endpoints
@@ -128,7 +129,7 @@ def clean_data(input_df: pd.DataFrame, keep_columns: list = None) -> tuple:
     df["month"] = pd.to_datetime(df["date"]).dt.month_name()
     df["year"] = pd.to_datetime(df["date"]).dt.year
     df["content"] = df.apply(
-        lambda row: f"Description: {row['description']}, Total cost of item: {row['cost']} {row['currency_code']}, Users: {row['users']}",
+        lambda row: f"Description: {row['description']} || Total cost of item: {row['cost']} {row['currency_code']} || Users: {row['users']}",
         axis=1,
     )
     content_list = df["content"].tolist()
