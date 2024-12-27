@@ -9,102 +9,29 @@ __date__ = "2024-12-26"
 __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
-# %% --------------------------------------------------------------------------
-# Import Modules
+
 import json
 
-from langchain.chains.query_constructor.base import AttributeInfo
-from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers.self_query.base import SelfQueryRetriever
-from langchain_anthropic import ChatAnthropic
-from langchain_chroma import Chroma
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from src.utilities import get_splitwise_data
+from src.splitwise_retriever import SplitwiseRetriever
 
 with open("config.json") as f:
     config = json.load(f)
 
 
-class SplitwiseRetriever:
-    def __init__(self, documents, vector_store, llm):
-        self.documents = documents
-        self.vector_store = vector_store
-        self.llm = llm
-        self.metadata_field_info = [
-            AttributeInfo(name="day", description="Day of the expense", type="int"),
-            AttributeInfo(
-                name="month", description="Month of the expense", type="string"
-            ),
-            AttributeInfo(name="year", description="Year of the expense", type="int"),
-            AttributeInfo(
-                name="category", description="Category of the expense", type="string"
-            ),
-        ]
-        self.memory = MemorySaver()
-        self.graph = None
-
-    def get_retriever(self):
-        """Create and return a configured retriever"""
-        return SelfQueryRetriever.from_llm(
-            llm=self.llm,
-            vectorstore=self.vector_store,
-            document_contents="Description and cost breakdown of individual expense",
-            metadata_field_info=self.metadata_field_info,
-            search_kwargs={"k": len(self.documents)},
-        )
-
-    def generate_graph(self):
-        """
-        Generate the graph for the chatbot
-        """
-        graph_builder = StateGraph(MessagesState)
-        graph_builder.add_node(query_or_respond)
-        graph_builder.add_node(tools)
-        graph_builder.add_node(generate)
-        graph_builder.set_entry_point("query_or_respond")
-        graph_builder.add_conditional_edges(
-            "query_or_respond",
-            tools_condition,
-            {END: END, "tools": "tools"},
-        )
-        graph_builder.add_edge("tools", "generate")
-        graph_builder.add_edge("generate", END)
-        self.graph = graph_builder.compile(checkpointer=self.memory)
-        return self.graph
-
-
-def chatbot(input_message: str):
-    for step in splitwise_retriever.graph.stream(
-        {"messages": [{"role": "user", "content": input_message}]},
-        config,
-        stream_mode="values",
-    ):
-        step["messages"][-1].pretty_print()
-
-
-def data_processing():
+# Step 1
+def query_or_respond(state: MessagesState):
     """
-    Data preparation for langchain
-    Get Splitwise data and convert to documents, embeddings and vector store
+    Generate tool call for retrieval or respond
     """
-    # Data preparation for langchain
-    data, content_list, metadata = get_splitwise_data()
-    # grouped_list = groupby_date(content_list)
-    documents = [
-        Document(page_content=item, metadata=metadata[i])
-        for i, item in enumerate(content_list)
-    ]
-    # convert to embeddings
-    embeddings = HuggingFaceEmbeddings()
-    # vector store
-    vector_store = Chroma.from_documents(documents, embeddings)
-    return documents, vector_store
+    llm_with_tools = splitwise_retriever.llm.bind_tools([retrieve_relevant_docs])
+    response = llm_with_tools.invoke(state["messages"])
+    # MessagesState appends messages to state instead of overwriting
+    return {"messages": [response]}
 
 
 @tool
@@ -120,17 +47,6 @@ def retrieve_relevant_docs(query: str):
         for doc in retrieved_docs
     )
     return serialized, retrieved_docs
-
-
-# Step 1
-def query_or_respond(state: MessagesState):
-    """
-    Generate tool call for retrieval or respond
-    """
-    llm_with_tools = splitwise_retriever.llm.bind_tools([retrieve_relevant_docs])
-    response = llm_with_tools.invoke(state["messages"])
-    # MessagesState appends messages to state instead of overwriting
-    return {"messages": [response]}
 
 
 # Step 2: Execute the retrieval.
@@ -167,14 +83,38 @@ def generate(state: MessagesState):
     return {"messages": [response]}
 
 
-def set_up_chatbot_workflow():
-    documents, vector_store = data_processing()
-    llm = ChatAnthropic(
-        model=config["model"]["name"],
-        temperature=config["model"]["temperature"],
-        max_tokens=config["model"]["max_tokens"],
+def generate_graph(memory):
+    """
+    Generate the graph for the chatbot
+    """
+    graph_builder = StateGraph(MessagesState)
+    graph_builder.add_node(query_or_respond)
+    graph_builder.add_node(tools)
+    graph_builder.add_node(generate)
+    graph_builder.set_entry_point("query_or_respond")
+    graph_builder.add_conditional_edges(
+        "query_or_respond",
+        tools_condition,
+        {END: END, "tools": "tools"},
     )
+    graph_builder.add_edge("tools", "generate")
+    graph_builder.add_edge("generate", END)
+    graph = graph_builder.compile(checkpointer=memory)
+    return graph
+
+
+def set_up_chatbot_workflow():
     # create global retriever
     global splitwise_retriever
-    splitwise_retriever = SplitwiseRetriever(documents, vector_store, llm)
-    splitwise_retriever.generate_graph()
+    splitwise_retriever = SplitwiseRetriever()
+    graph = generate_graph(splitwise_retriever.memory)
+    splitwise_retriever.graph = graph
+
+
+def chatbot(input_message: str):
+    for step in splitwise_retriever.graph.stream(
+        {"messages": [{"role": "user", "content": input_message}]},
+        config,
+        stream_mode="values",
+    ):
+        step["messages"][-1].pretty_print()

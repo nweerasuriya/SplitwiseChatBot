@@ -16,8 +16,11 @@ from src.chatbot import set_up_chatbot_workflow, chatbot
 # Load the workflow
 set_up_chatbot_workflow()
 
+# %%
 input_message = ""
 while input_message != "Exit":
     input_message = input("Enter your message: ")
     output = chatbot(input_message)
     print(output)
+
+# %%
