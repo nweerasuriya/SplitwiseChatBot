@@ -12,7 +12,10 @@ import pandas as pd
 from src.splitwise_api import SplitwiseAPI, clean_data
 
 
-def get_splitwise_data(group_id=50024800):
+def get_splitwise_data(group_id):
+    """
+    Use SplitwiseAPI to get expenses for a group
+    """
     splitwise = SplitwiseAPI()
     group_expense = splitwise.get_expenses(group_id)
     df = pd.DataFrame(group_expense["expenses"])
@@ -21,6 +24,9 @@ def get_splitwise_data(group_id=50024800):
 
 
 def groupby_date(content_list):
+    """
+    Group content list by date and return a list of grouped content separated by "||"
+    """
     content_dict = {}
     # group content list by date
     for item in content_list:

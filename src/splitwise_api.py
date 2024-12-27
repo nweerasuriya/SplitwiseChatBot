@@ -136,7 +136,7 @@ def clean_data(input_df: pd.DataFrame, keep_columns: list = None) -> tuple:
             "day": row["day"],
             "month": row["month"],
             "year": row["year"],
-            "category": row["category"],
+            "category": row["category"].lower(),
         }
         for _, row in df.iterrows()
     ]

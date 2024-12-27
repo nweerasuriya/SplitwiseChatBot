@@ -14,7 +14,7 @@ __version__ = "0.1"
 # Import Modules
 from src.chatbot import set_up_chatbot_workflow, chatbot
 # Load the workflow
-set_up_chatbot_workflow()
+set_up_chatbot_workflow(group_id=50024800)
 
 # %%
 input_message = ""

@@ -103,10 +103,10 @@ def generate_graph(memory):
     return graph
 
 
-def set_up_chatbot_workflow():
+def set_up_chatbot_workflow(group_id: int):
     # create global retriever
     global splitwise_retriever
-    splitwise_retriever = SplitwiseRetriever()
+    splitwise_retriever = SplitwiseRetriever(group_id)
     graph = generate_graph(splitwise_retriever.memory)
     splitwise_retriever.graph = graph
 

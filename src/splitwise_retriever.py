@@ -11,10 +11,10 @@ import json
 
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain_anthropic import ChatAnthropic
 from langchain_chroma import Chroma
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.utilities import get_splitwise_data
@@ -24,20 +24,24 @@ with open("config.json") as f:
 
 
 class SplitwiseRetriever:
-    def __init__(self):
+    def __init__(self, group_id):
         self.metadata_field_info = [
             AttributeInfo(name="day", description="Day of the expense", type="int"),
             AttributeInfo(
-                name="month", description="Month of the expense", type="string"
+                name="month",
+                description="Month of the expense",
+                type="string",
             ),
             AttributeInfo(name="year", description="Year of the expense", type="int"),
             AttributeInfo(
-                name="category", description="Category of the expense", type="string"
+                name="category",
+                description="Category of the expense",
+                type="string",
             ),
         ]
         self.memory = MemorySaver()
         self.graph = None
-        self.documents, self.vector_store = self.data_processing()
+        self.documents, self.vector_store = self.data_processing(group_id)
         self.llm = ChatAnthropic(
             model=config["model"]["name"],
             temperature=config["model"]["temperature"],
@@ -45,16 +49,16 @@ class SplitwiseRetriever:
         )
 
     @staticmethod
-    def data_processing():
+    def data_processing(group_id):
         """
         Data preparation for langchain
         Get Splitwise data and convert to documents, embeddings and vector store
         """
         # Data preparation for langchain
-        data, content_list, metadata = get_splitwise_data()
+        data, content_list, metadata = get_splitwise_data(group_id)
         # grouped_list = groupby_date(content_list)
         documents = [
-            Document(page_content=item, metadata=metadata[i])
+            Document(page_content=item.lower(), metadata=metadata[i])
             for i, item in enumerate(content_list)
         ]
         # convert to embeddings
