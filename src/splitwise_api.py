@@ -67,12 +67,6 @@ class SplitwiseAPI:
 def get_user_info(user_list: list) -> list:
     """
     Get user data from a list of dictionaries
-
-    Args:
-        user_list: list of dictionaries
-
-    Returns:
-        dict: dictionary with user name as key and user info as value
     """
     first_name = [user["user"]["first_name"] for user in user_list]
     last_name = [user["user"]["last_name"] for user in user_list]
@@ -95,12 +89,6 @@ def get_user_info(user_list: list) -> list:
 def clean_data(input_df: pd.DataFrame, keep_columns: list = None) -> tuple:
     """
     Clean Splitwise data and get list of contents
-
-    Args:
-        input_df: DataFrame with Splitwise data
-
-    Returns:
-        Cleaned DataFrame, list of content, list of metadata dict
     """
     if not keep_columns:
         keep_columns = [
