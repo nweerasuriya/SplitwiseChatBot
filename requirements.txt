@@ -1,0 +1,10 @@
+langchain==0.3.13
+langchain_anthropic==0.3.1
+langchain_chroma==0.1.4
+langchain_core==0.3.28
+langchain_huggingface==0.1.2
+langgraph==0.2.60
+oauthlib==3.2.2
+pandas==2.2.3
+requests_oauthlib==2.0.0
+streamlit==1.41.1
