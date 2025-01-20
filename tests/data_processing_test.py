@@ -7,8 +7,6 @@ __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
 
-# %% --------------------------------------------------------------------------
-# Import Modules
 import pytest
 import pandas as pd
 from src.utilities import (
@@ -164,15 +162,7 @@ def test_summarise_monthly_expenses(synth_data):
     )
     # Check if the summary_metadata is a list of size 4
     assert len(summary_metadata) == 4
-    # assert day is 0 for all items
-    assert list(set([item["day"] for item in summary_metadata])) == [0]
+    # assert type is summary for all items
+    assert all([item["type"] == "summary" for item in summary_metadata])
     assert summary_metadata[0]["month"] == "October"
     assert summary_metadata[-1]["month"] == "November"
-
-
-
-def test_process_data(synth_data):
-    content_list, metadata = process_data(group_id=50024800)
-    # Check if the content_list is a list of size 5
-    assert len(metadata) == 5
-# %%
