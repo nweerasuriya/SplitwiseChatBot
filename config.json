@@ -4,9 +4,6 @@
         "temperature": 0,
         "max_tokens": 500
     },
-    "prompts": {
-        "system": "src/system_prompt.txt"
-    },
     "configurable": {
         "thread_id": "2"
     }
