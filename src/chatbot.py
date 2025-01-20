@@ -68,7 +68,26 @@ def generate(state: MessagesState):
 
     # format into prompt
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
-    system_prompt = config["prompts"]["system"] + docs_content
+    # system_prompt = config["prompts"]["system"] + docs_content
+    system_prompt = f"""
+        You are a chatbot that can answer questions about spending and expenses on Splitwise using the following contextual data.
+        If the month is provided, the always prioritise the summary documents first, specified as so in the metadata "type"="summary".
+        Use these for calculations rather than individual expenses when possible. \n
+
+        If calculating individual expenses:\n
+            1. USE the tools provided to extract the necessary values\n
+            2. PERFORM the calculation using the retrieved values\n
+            3. RETURN ONLY the final calculated amount with the currency.\n
+
+        Show this information in the final answer. For example:\n
+            Question: 'What was X's owed spend on Groceries between these two dates?'\n
+            Answer: 'X's total spend was £45.67'\n
+
+        Keep the answer concise, getting straight to the answer but return the number of documents retrieved.
+        If not specified, assume that requested expenses for the individual are their owed share. \n
+        If no relevant docs are found, say that you don't know. \n\n
+        {docs_content}
+    """
 
     conversation_messages = [
         message
