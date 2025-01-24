@@ -9,7 +9,7 @@ __version__ = "0.1"
 
 import pandas as pd
 
-from src.splitwise_api import SplitwiseAPI
+from splitwise_api import SplitwiseAPI
 
 
 def get_splitwise_data(group_id):
