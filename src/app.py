@@ -6,6 +6,10 @@ __date__ = "2024-10-28"
 __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
+__import__("pysqlite3")
+import sys
+
+sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
 import streamlit as st
 
