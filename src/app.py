@@ -9,11 +9,11 @@ __version__ = "0.1"
 
 import streamlit as st
 
-from src.chatbot import ChatbotWorkflow
+from chatbot import ChatbotWorkflow
 
 st.title("Splitwise Chatbot")
 st.markdown("Ask me questions about your Splitwise data!")
-st.logo(image="src/logo.png")
+st.logo(image="logo.png")
 st.markdown(
     """
     <style>

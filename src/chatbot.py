@@ -18,7 +18,7 @@ from langchain_core.tools import tool
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from src.splitwise_retriever import SplitwiseRetriever
+from splitwise_retriever import SplitwiseRetriever
 
 with open("config.json") as f:
     config = json.load(f)

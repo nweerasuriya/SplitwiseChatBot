@@ -17,7 +17,7 @@ from langchain_chroma import Chroma
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 
-from src.utilities import process_data
+from utilities import process_data
 
 with open("config.json") as f:
     config = json.load(f)
