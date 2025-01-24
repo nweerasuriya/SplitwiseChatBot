@@ -12,15 +12,14 @@ __version__ = "0.1"
 
 # %% --------------------------------------------------------------------------
 # Import Modules
-from src.chatbot import set_up_chatbot_workflow, chatbot
-# Load the workflow
-set_up_chatbot_workflow(group_id=50024800)
+from src.chatbot import ChatbotWorkflow
+chatbot = ChatbotWorkflow(50024800)
 
 # %%
 input_message = ""
 while input_message != "Exit":
     input_message = input("Enter your message: ")
-    output = chatbot(input_message)
+    output = chatbot.stream(input_message)
     print(output)
 
 # %%

@@ -17,7 +17,7 @@ from langchain_chroma import Chroma
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 
-from src.utilities import get_splitwise_data
+from src.utilities import process_data
 
 with open("config.json") as f:
     config = json.load(f)
@@ -26,6 +26,11 @@ with open("config.json") as f:
 class SplitwiseRetriever:
     def __init__(self, group_id):
         self.metadata_field_info = [
+            AttributeInfo(
+                name="type",
+                description="Type of document: either 'individual' or 'summary'",
+                type="string",
+            ),
             AttributeInfo(name="day", description="Day of the expense", type="int"),
             AttributeInfo(
                 name="month",
@@ -39,6 +44,7 @@ class SplitwiseRetriever:
                 type="string",
             ),
         ]
+
         self.memory = MemorySaver()
         self.graph = None
         self.documents, self.vector_store = self.data_processing(group_id)
@@ -55,7 +61,7 @@ class SplitwiseRetriever:
         Get Splitwise data and convert to documents, embeddings and vector store
         """
         # Data preparation for langchain
-        data, content_list, metadata = get_splitwise_data(group_id)
+        content_list, metadata = process_data(group_id)
         # grouped_list = groupby_date(content_list)
         documents = [
             Document(page_content=item.lower(), metadata=metadata[i])
@@ -74,7 +80,7 @@ class SplitwiseRetriever:
         return SelfQueryRetriever.from_llm(
             llm=self.llm,
             vectorstore=self.vector_store,
-            document_contents="Description and cost breakdown of individual expense",
+            document_contents="Type of document (summary or individual). Description and cost breakdown of individual expense",
             metadata_field_info=self.metadata_field_info,
             search_kwargs={"k": len(self.documents)},
         )

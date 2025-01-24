@@ -12,6 +12,7 @@ __version__ = "0.1"
 
 import json
 
+import streamlit as st
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
 from langgraph.graph import END, MessagesState, StateGraph
@@ -68,7 +69,26 @@ def generate(state: MessagesState):
 
     # format into prompt
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
-    system_prompt = config["prompts"]["system"] + docs_content
+    # system_prompt = config["prompts"]["system"] + docs_content
+    system_prompt = f"""
+        You are a chatbot that can answer questions about spending and expenses on Splitwise using the following contextual data.
+        If the month is provided, the always prioritise the summary documents first, specified as so in the metadata "type"="summary".
+        Use these for calculations rather than individual expenses when possible. \n
+
+        If calculating individual expenses:\n
+            1. USE the tools provided to extract the necessary values\n
+            2. PERFORM the calculation using the retrieved values\n
+            3. RETURN ONLY the final calculated amount with the currency.\n
+
+        Show this information in the final answer. For example:\n
+            Question: 'What was X's owed spend on Groceries between these two dates?'\n
+            Answer: 'X's total spend was £45.67'\n
+
+        Keep the answer concise, getting straight to the answer but return the number of documents retrieved.
+        If not specified, assume that requested expenses for the individual are their owed share. \n
+        If no relevant docs are found, say that you don't know. \n\n
+        {docs_content}
+    """
 
     conversation_messages = [
         message
@@ -103,18 +123,37 @@ def generate_graph(memory):
     return graph
 
 
-def set_up_chatbot_workflow(group_id: int):
-    # create global retriever
-    global splitwise_retriever
-    splitwise_retriever = SplitwiseRetriever(group_id)
-    graph = generate_graph(splitwise_retriever.memory)
-    splitwise_retriever.graph = graph
+class ChatbotWorkflow:
+    """
+    Chatbot workflow for Splitwise
 
+    Args:
+        group_id (int): The group ID for Splitwise
 
-def chatbot(input_message: str):
-    for step in splitwise_retriever.graph.stream(
-        {"messages": [{"role": "user", "content": input_message}]},
-        config,
-        stream_mode="values",
-    ):
-        step["messages"][-1].pretty_print()
+    Attributes:
+        splitwise_retriever (SplitwiseRetriever): The SplitwiseRetriever instance
+
+    """
+
+    def __init__(self, group_id: int):
+        self.splitwise_retriever = None
+        self.set_up_chatbot_workflow(group_id)
+
+    @staticmethod
+    def set_up_chatbot_workflow(group_id: int):
+        # create global retriever
+        global splitwise_retriever
+        splitwise_retriever = SplitwiseRetriever(group_id)
+        graph = generate_graph(splitwise_retriever.memory)
+        splitwise_retriever.graph = graph
+
+    @staticmethod
+    def stream(input_message: str):
+        for step in splitwise_retriever.graph.stream(
+            {"messages": [{"role": "user", "content": input_message}]},
+            config,
+            stream_mode="values",
+        ):
+            step["messages"][-1].pretty_print()
+
+        return step["messages"][-1].content
