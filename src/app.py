@@ -22,7 +22,7 @@ st.markdown(
     """
     <style>
     img[data-testid="stLogo"] {
-            height: 12rem;
+            height: 10rem;
     }
     </style>
     """,

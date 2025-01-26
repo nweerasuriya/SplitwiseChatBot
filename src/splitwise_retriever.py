@@ -9,6 +9,7 @@ __version__ = "0.1"
 
 import json
 
+import chromadb.api
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.docstore.document import Document
 from langchain.retrievers.self_query.base import SelfQueryRetriever
@@ -18,6 +19,8 @@ from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 
 from utilities import process_data
+
+chromadb.api.client.SharedSystemClient.clear_system_cache()
 
 with open("config.json") as f:
     config = json.load(f)
