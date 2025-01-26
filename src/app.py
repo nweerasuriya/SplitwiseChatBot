@@ -17,7 +17,7 @@ from chatbot import ChatbotWorkflow
 
 st.title("Splitwise Chatbot")
 st.markdown("Ask me questions about your Splitwise data!")
-st.logo(image="logo.png")
+st.logo(image="src/logo.png")
 st.markdown(
     """
     <style>
