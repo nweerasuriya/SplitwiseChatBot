@@ -20,8 +20,6 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from utilities import process_data
 
-chromadb.api.client.SharedSystemClient.clear_system_cache()
-
 with open("config.json") as f:
     config = json.load(f)
 
@@ -63,6 +61,7 @@ class SplitwiseRetriever:
         Data preparation for langchain
         Get Splitwise data and convert to documents, embeddings and vector store
         """
+        chromadb.api.client.SharedSystemClient.clear_system_cache()
         # Data preparation for langchain
         content_list, metadata = process_data(group_id)
         # grouped_list = groupby_date(content_list)
