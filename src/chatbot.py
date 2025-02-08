@@ -12,12 +12,13 @@ __version__ = "0.1"
 
 import json
 
+import streamlit as st
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from src.splitwise_retriever import SplitwiseRetriever
+from splitwise_retriever import SplitwiseRetriever
 
 with open("config.json") as f:
     config = json.load(f)
@@ -122,18 +123,37 @@ def generate_graph(memory):
     return graph
 
 
-def set_up_chatbot_workflow(group_id: int):
-    # create global retriever
-    global splitwise_retriever
-    splitwise_retriever = SplitwiseRetriever(group_id)
-    graph = generate_graph(splitwise_retriever.memory)
-    splitwise_retriever.graph = graph
+class ChatbotWorkflow:
+    """
+    Chatbot workflow for Splitwise
 
+    Args:
+        group_id (int): The group ID for Splitwise
 
-def chatbot(input_message: str):
-    for step in splitwise_retriever.graph.stream(
-        {"messages": [{"role": "user", "content": input_message}]},
-        config,
-        stream_mode="values",
-    ):
-        step["messages"][-1].pretty_print()
+    Attributes:
+        splitwise_retriever (SplitwiseRetriever): The SplitwiseRetriever instance
+
+    """
+
+    def __init__(self, group_id: int):
+        self.splitwise_retriever = None
+        self.set_up_chatbot_workflow(group_id)
+
+    @staticmethod
+    def set_up_chatbot_workflow(group_id: int):
+        # create global retriever
+        global splitwise_retriever
+        splitwise_retriever = SplitwiseRetriever(group_id)
+        graph = generate_graph(splitwise_retriever.memory)
+        splitwise_retriever.graph = graph
+
+    @staticmethod
+    def stream(input_message: str):
+        for step in splitwise_retriever.graph.stream(
+            {"messages": [{"role": "user", "content": input_message}]},
+            config,
+            stream_mode="values",
+        ):
+            step["messages"][-1].pretty_print()
+
+        return step["messages"][-1].content

@@ -9,6 +9,7 @@ __version__ = "0.1"
 
 import json
 
+import chromadb.api
 from langchain.chains.query_constructor.base import AttributeInfo
 from langchain.docstore.document import Document
 from langchain.retrievers.self_query.base import SelfQueryRetriever
@@ -17,7 +18,7 @@ from langchain_chroma import Chroma
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 
-from src.utilities import process_data
+from utilities import process_data
 
 with open("config.json") as f:
     config = json.load(f)
@@ -60,6 +61,7 @@ class SplitwiseRetriever:
         Data preparation for langchain
         Get Splitwise data and convert to documents, embeddings and vector store
         """
+        chromadb.api.client.SharedSystemClient.clear_system_cache()
         # Data preparation for langchain
         content_list, metadata = process_data(group_id)
         # grouped_list = groupby_date(content_list)
