@@ -1,15 +1,10 @@
 """
-Create Flask app to authenticate with Splitwise API
+Create Streamlit app to authenticate with Splitwise API
 """
 
 __date__ = "2024-10-28"
 __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
-
-__import__("pysqlite3")
-import sys
-
-sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
 import streamlit as st
 
@@ -22,7 +17,10 @@ st.markdown(
     """
     <style>
     img[data-testid="stLogo"] {
-            height: 10rem;
+        width: 40%;
+        max-width: 750px;
+        min-width: 200px;
+        height: auto !important;
     }
     </style>
     """,
@@ -33,11 +31,11 @@ group_id = st.number_input("Enter your Splitwise Group ID:", value=50024800)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+else:
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
 if "chatbot" not in st.session_state:
     st.session_state.chatbot = ChatbotWorkflow(group_id)
@@ -50,10 +48,12 @@ if "chatbot" not in st.session_state:
     )
     with st.chat_message("assistant"):
         response = st.session_state.chatbot.stream(
-            "Show me all the possible users and categories in this group"
+            "Show me all the possible users and categories in this group. Let the user know that they can ask me anything about their Splitwise data."
         )
 
     st.session_state.messages.append({"role": "assistant", "content": response})
+    with st.chat_message("assistant"):
+        st.markdown(response)
 
 
 # Chat input
